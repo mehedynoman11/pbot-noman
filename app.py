@@ -8,8 +8,8 @@ from google import genai
 logging.basicConfig(level=logging.INFO)
 
 # Environment Variables (Configured on Render dashboard)
-TELEGRAM_TOKEN = os.environ.get(TELEGRAM_TOKEN)
-GEMINI_API_KEY = os.environ.get(GEMINI_API_KEY)
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 # Initialize Clients
 gemini_client = genai.Client(api_key=GEMINI_API_KEY)
