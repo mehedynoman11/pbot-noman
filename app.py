@@ -48,9 +48,15 @@ def home():
     return "Telegram Bot Service is active!", 200
 
 # Webhook endpoint to receive Telegram updates
-@app.route(f'/{TELEGRAM_TOKEN}', methods=['POST'])
-async def webhook():
-    json_str = request.get_data().decode('UTF-8')
-    update = Update.de_json(data=request.get_json(force=True), bot=telegram_app.bot)
-    await telegram_app.process_update(update)
+app.route(f'/{TELEGRAM_TOKEN}', methods=['POST'])
+def webhook():
+    # Parse the incoming Telegram update
+    update = Update.de_json(request.get_json(force=True), telegram_app.bot)
+
+    # Process async task synchronously
+    async def process():
+        async with telegram_app:
+            await telegram_app.process_update(update)
+
+    asyncio.run(process())
     return 'OK', 200
