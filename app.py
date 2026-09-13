@@ -1,24 +1,31 @@
 import os
-import asyncio
-from flask import Flask, request
-from dotenv import load_dotenv
+import logging
+from flask import Flask, request, jsonify
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 from google import genai
-
+from dotenv import load_dotenv
 load_dotenv()
 
+logging.basicConfig(level=logging.INFO)
+
+# Environment Variables (Configured on Render dashboard)
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
+# Verification check
+
+# Initialize Clients
 gemini_client = genai.Client(api_key=GEMINI_API_KEY)
 telegram_app = Application.builder().token(TELEGRAM_TOKEN).build()
-flask_app = Flask(__name__)
+
+# Flask Web Server setup
+app = Flask(__name__)
 
 async def start(update: Update, context):
-    await update.message.reply_text("Hello! Bot running on local Flask app.")
+    await update.message.reply_text("Hello! 👋 I am your free AI Telegram bot hosted on Render.")
 
-async def handle_ai(update: Update, context):
+async def handle_ai_response(update: Update, context):
     user_prompt = update.message.text
     await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
     try:
@@ -28,26 +35,22 @@ async def handle_ai(update: Update, context):
         )
         await update.message.reply_text(response.text)
     except Exception as e:
-        await update.message.reply_text("Error processing AI request.")
+        logging.error(f"Error generating AI response: {e}")
+        await update.message.reply_text("Sorry, an error occurred while generating a response.")
 
+# Add Handlers
 telegram_app.add_handler(CommandHandler("start", start))
-telegram_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_ai))
+telegram_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_ai_response))
 
-@flask_app.route('/')
+# Health check route for Render
+@app.route('/')
 def home():
-    return "Flask local server is running!", 200
+    return "Telegram Bot Service is active!", 200
 
-@flask_app.route(f'/{TELEGRAM_TOKEN}', methods=['POST'])
-def webhook():
-    # Process updates inside an async loop
-    update = Update.de_json(request.get_json(force=True), telegram_app.bot)
-    
-    async def process():
-        async with telegram_app:
-            await telegram_app.process_update(update)
-
-    asyncio.run(process())
+# Webhook endpoint to receive Telegram updates
+@app.route(f'/{TELEGRAM_TOKEN}', methods=['POST'])
+async def webhook():
+    json_str = request.get_data().decode('UTF-8')
+    update = Update.de_json(data=request.get_json(force=True), bot=telegram_app.bot)
+    await telegram_app.process_update(update)
     return 'OK', 200
-
-if __name__ == '__main__':
-    flask_app.run(port=5000, debug=True)
