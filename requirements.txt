@@ -2,4 +2,5 @@ flask
 gunicorn
 python-telegram-bot
 google-genai
+asgiref
 dotenv 
