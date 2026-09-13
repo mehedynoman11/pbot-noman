@@ -1,4 +1,5 @@
 import os
+import asyncio
 import logging
 from flask import Flask, request, jsonify
 from telegram import Update
@@ -48,7 +49,7 @@ def home():
     return "Telegram Bot Service is active!", 200
 
 # Webhook endpoint to receive Telegram updates
-app.route(f'/{TELEGRAM_TOKEN}', methods=['POST'])
+@app.route(f'/{TELEGRAM_TOKEN}', methods=['POST'])
 def webhook():
     # Parse the incoming Telegram update
     update = Update.de_json(request.get_json(force=True), telegram_app.bot)
