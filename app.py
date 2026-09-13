@@ -16,7 +16,7 @@ gemini_client = genai.Client(api_key=GEMINI_API_KEY)
 telegram_app = Application.builder().token(TELEGRAM_TOKEN).build()
 
 # Flask Web Server setup
-flask_app = Flask(__name__)
+app = Flask(__name__)
 
 async def start(update: Update, context):
     await update.message.reply_text("Hello! 👋 I am your free AI Telegram bot hosted on Render.")
@@ -39,12 +39,12 @@ telegram_app.add_handler(CommandHandler("start", start))
 telegram_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_ai_response))
 
 # Health check route for Render
-@flask_app.route('/')
+@app.route('/')
 def home():
     return "Telegram Bot Service is active!", 200
 
 # Webhook endpoint to receive Telegram updates
-@flask_app.route(f'/{TELEGRAM_TOKEN}', methods=['POST'])
+@app.route(f'/{TELEGRAM_TOKEN}', methods=['POST'])
 async def webhook():
     json_str = request.get_data().decode('UTF-8')
     update = Update.de_json(data=request.get_json(force=True), bot=telegram_app.bot)
